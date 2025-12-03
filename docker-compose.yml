@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  app:
+    image: krmka/my-spring-app:1.0.1
+    container_name: my-spring-app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/appdb
+      SPRING_DATASOURCE_USERNAME: appuser
+      SPRING_DATASOURCE_PASSWORD: secret
+    ports:
+      - "8998:8998"
+    networks:
+      - backend_network
+
+  db:
+    image: postgres:17
+    container_name: postgres-app
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+networks:
+  backend_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
